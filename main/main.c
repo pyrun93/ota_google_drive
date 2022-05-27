@@ -5,17 +5,19 @@
 #include "nvs_flash.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include "esp_app_format.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "protocol_examples_common.h"
+#include "esp_ota_ops.h"
 
 # define TAG "OTA"
 xSemaphoreHandle ota_semaphore;
 
-const int software_version = 1;
+//const int software_version = 1;
 extern const uint8_t server_cert_pem_start[] asm("_binary_google_cer_start");
 
 esp_err_t  client_event_handler(esp_http_client_event_t *evt)
@@ -43,7 +45,7 @@ void run_ota(void *params)
 
     if(esp_https_ota(&clientConfig) == ESP_OK)
     {
-      ESP_LOGI(TAG,"OTA flash succsessfull for version %d.",software_version);
+      //ESP_LOGI(TAG,"OTA flash succsessfull for version %d.",software_version);
       printf("restarting in 5 seconds\n");
       vTaskDelay(pdMS_TO_TICKS(5000));
       esp_restart();
@@ -60,11 +62,15 @@ void on_button_pushed(void *params)
 
 void app_main(void)
 {
-  printf("HAY!!! This is a new feature\n");
-  ESP_LOGI("SOFTWARE VERSION", "we are running %d",software_version);
+//  printf("HAY!!! This is a new feature\n");
+//  ESP_LOGI("SOFTWARE VERSION", "we are running %d",software_version);
+  const esp_partition_t *running_partition = esp_ota_get_running_partition();
+  esp_app_desc_t running_partition_description;
+  esp_ota_get_partition_description(running_partition, &running_partition_description);
+  printf("current firmware version is %s\n",running_partition_description.version);
   gpio_config_t gpioConfig = {
       .pin_bit_mask = 1ULL << GPIO_NUM_0,
-      .mode = GPIO_MODE_DEF_INPUT,
+      .mode = BIT0, //GPIO_MODE_DEF_INPUT,
       .pull_up_en = GPIO_PULLUP_ENABLE,
       .pull_down_en = GPIO_PULLUP_DISABLE,
       .intr_type = GPIO_INTR_NEGEDGE};
